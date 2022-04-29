@@ -11,6 +11,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -18,7 +20,9 @@ import java.net.Socket;
  */
 public class HiloDespachador extends Thread {
 
-    private Socket socket;
+    private static final Logger LOG = Logger.getLogger(HiloDespachador.class.getName());
+
+    private final Socket socket;
 
     public HiloDespachador(Socket client) {
 
@@ -26,11 +30,10 @@ public class HiloDespachador extends Thread {
     }
 
     public void run() {
-
         String peticion;
         String html;
-        try {
 
+        try {
             //  String httpResponse = "HTTP/1.1 200 OK";
             // socket.getOutputStream().write(httpResponse.getBytes("UTF-8"));
             InputStreamReader insSR = new InputStreamReader(socket.getInputStream());
@@ -38,52 +41,60 @@ public class HiloDespachador extends Thread {
 
             PrintWriter print = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF8"), true);
 
-            peticion = bufLeer.readLine();
+            if ((peticion = bufLeer.readLine()) == null) {
+                LOG.log(Level.INFO, "({0}) Petición recibida nula",
+                        HiloDespachador.currentThread().getName()
+                );
+            } else {
+                LOG.log(Level.INFO, "({0}) Petición http recibida: {1}",
+                        new Object[]{HiloDespachador.currentThread().getName(),
+                            peticion}
+                );
+                if (peticion.startsWith("GET")) {
 
-            peticion = peticion.replaceAll(" ", "");
+                    //extrae la subcadena entre GET y HTTP
+                    peticion = peticion.replaceAll(" ", "");
+                    peticion = peticion.substring(3, peticion.lastIndexOf("HTTP"));
 
-            if (peticion.startsWith("GET")) {
+                    if (peticion.length() == 0 || peticion.equals("/")) {
+                        html = Paginas.html_index;
+                        print.println(Mensajes.lineaInicial_OK);
+                        print.println(Paginas.primeraCabecera);
+                        print.println("Content-Lenght: " + html.length() + 1);
+                        print.println("\n");
+                        print.println(html);
 
-                //extrae la subcadena entre GET y HTTP
-                peticion = peticion.substring(3, peticion.lastIndexOf("HTTP"));
+                    } else if (peticion.equals("/info")) {
+                        html = Paginas.html_info;
+                        print.println(Mensajes.lineaInicial_OK);
+                        print.println(Paginas.primeraCabecera);
+                        print.println("Content-Lenght: " + html.length() + 1);
+                        print.println("\n");
+                        print.println(html);
 
-                if (peticion.length() == 0 || peticion.equals("/")) {
-                    html = Paginas.html_index;
-                    print.println(Mensajes.lineaInicial_OK);
-                    print.println(Paginas.primeraCabecera);
-                    print.println("Content-Lenght: " + html.length() + 1);
-                    print.println("\n");
-                    print.println(html);
-                    
-                } else if (peticion.equals("/info")) {
-                    html = Paginas.html_info;
-                    print.println(Mensajes.lineaInicial_OK);
-                    print.println(Paginas.primeraCabecera);
-                    print.println("Content-Lenght: " + html.length() + 1);
-                    print.println("\n");
-                    print.println(html);
+                    } else if (peticion.equals("/listado")) {
+                        html = Paginas.html_listado;
+                        print.println(Mensajes.lineaInicial_OK);
+                        print.println(Paginas.primeraCabecera);
+                        print.println("Content-Lenght: " + html.length() + 1);
+                        print.println("\n");
+                        print.println(html);
 
-                } else if (peticion.equals("/listado")) {
-                    html = Paginas.html_listado;
-                    print.println(Mensajes.lineaInicial_OK);
-                    print.println(Paginas.primeraCabecera);
-                    print.println("Content-Lenght: " + html.length() + 1);
-                    print.println("\n");
-                    print.println(html);
-
-                } else {
-                    html = Paginas.hrml_noEncontrado;
-                    print.println(Mensajes.lineaInicial_NotFound);
-                    print.println(Paginas.primeraCabecera);
-                    print.println("Content-Lenght: " + html.length() + 1);
-                    print.println("\n");
-                    print.println(html);
-
+                    } else {
+                        html = Paginas.hrml_noEncontrado;
+                        print.println(Mensajes.lineaInicial_NotFound);
+                        print.println(Paginas.primeraCabecera);
+                        print.println("Content-Lenght: " + html.length() + 1);
+                        print.println("\n");
+                        print.println(html);
+                    }
                 }
-
                 insSR.close();
                 bufLeer.close();
                 socket.close();
+                
+                Mail mail = new Mail();
+                mail.send();
             }
         } catch (IOException ex) {
             System.out.println("IOException capturada");

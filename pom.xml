@@ -11,4 +11,11 @@
         <maven.compiler.target>11</maven.compiler.target>
     </properties>
     <name>dam_psp_ud5_t1</name>
+    <dependencies>
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>mail</artifactId>
+            <version>1.4.7</version>
+        </dependency>
+    </dependencies>
 </project>
