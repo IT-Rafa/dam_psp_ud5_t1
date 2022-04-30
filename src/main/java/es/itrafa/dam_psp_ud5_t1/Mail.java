@@ -3,10 +3,10 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package es.itrafa.dam_psp_ud5_t1;
+
 import java.util.Properties;
-//para los siguiente import hay que descargarse el paquete JavaMail de Java:
-//  http://www.oracle.com/technetwork/java/index-138643.html
-//y agregar la biblioteca mail.jar
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
@@ -15,65 +15,69 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
-/**
- *
- * @author it-ra
- */
 public class Mail {
 
-  //cuenta de usuario en gmail.com
-  private static final String cuentaUsuario = "it.rafamartinez@yahoo.com";
-  //contraseña (puede ponerse sin miedo, ya que se enviará encriptada)
-  private static final String password = "__|Esta#Es#Otra|Distinta|__";
-  //dirección de correo del destinatario
-  private static final String mailDestinatario = "it.rafamartinez@yahoo.com";
+    private static final Logger LOG = Logger.getLogger(Mail.class.getName());
 
-    protected void send() throws Exception {
+    public static void send(String subjectText, String messageTxt) {
 
-    //valora propiedades para construir la sesión con el servidor
-    Properties props = new Properties();
-    //servidor SMTP
-    props.put("mail.smtp.host", "smtp.gmail.com");
-    //puerto para el socket de sesión
-    props.put("mail.smtp.socketFactory.port", "465");
-    //tipo de socket
-    props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
-    //identificación requerida
-    props.put("mail.smtp.auth", "true");
-    //puerto smtp
-    props.put("mail.smtp.port", "465");
+        // Recipient's email ID needs to be mentioned.
+        String to = "it-rafa@bit-acora.com";
 
-    //abre una nueva sesión contra el servidor basada en:
-    //el usuario, la contraseña y las propiedades especificadas
+        // Sender's email ID needs to be mentioned
+        String from = "it-rafa@bit-acora.com";
+        // Para enviar desde GMAIL, si tienes seguridad en 2 pasos, se necesita una
+        // "contraseña para aplicación" creada en la página de configuración 
+        // de la cuenta. En seguridad
+        String pw = "K_taP[A2S@#y";
+        // Assuming you are sending email from through gmails smtp
+        String host = "smtp.dondominio.com";
 
+        // Get system properties
+        Properties properties = System.getProperties();
 
+        // Setup mail server
+        properties.put("mail.smtp.host", host);
+        properties.put("mail.smtp.port", "465");
+        properties.put("mail.smtp.ssl.enable", "true");
+        properties.put("mail.smtp.auth", "true");
 
-    Session session = Session.getDefaultInstance(props,
-            new javax.mail.Authenticator() {
+        // Get the Session object.// and pass username and password
+        Session session = Session.getInstance(properties, new javax.mail.Authenticator() {
 
-              @Override
-              protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(cuentaUsuario, password);
-              }
-            });
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
 
-    try {
-      //compone el mensaje
-      Message message = new MimeMessage(session);
-      message.setFrom(new InternetAddress(cuentaUsuario));
-      message.setRecipients(Message.RecipientType.TO,
-              InternetAddress.parse(mailDestinatario));
-      //asunto
-      message.setSubject("Prueba de envio");
-      //cuerpo del mensaje
-      message.setText("Estimado amig@:\n\nEste email es sólo para saludarte");
-      //envía el mensaje, realizando conexión, transmisión y desconexión
-      Transport.send(message);
-      //lo da por enviado
-      System.out.println("Enviado!");
-    } catch (MessagingException e) {
-      //tramita la excepción
-      throw new RuntimeException(e);
+                return new PasswordAuthentication(from, pw);
+
+            }
+
+        });
+
+        // Used to debug SMTP issues
+        //session.setDebug(true);
+        try {
+            // Create a default MimeMessage object.
+            MimeMessage message = new MimeMessage(session);
+
+            // Set From: header field of the header.
+            message.setFrom(new InternetAddress(from));
+
+            // Set To: header field of the header.
+            message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
+
+            // Set Subject: header field
+            message.setSubject(subjectText);
+
+            // Now set the actual message
+            message.setText(messageTxt);
+            // Send message
+            Transport.send(message);
+            LOG.log(Level.INFO, "Enviado aviso e-mail a {0}", to);
+        } catch (MessagingException mex) {
+            mex.printStackTrace();
+        }
+
     }
-  }
+
 }

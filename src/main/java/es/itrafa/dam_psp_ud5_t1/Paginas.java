@@ -23,7 +23,7 @@ public class Paginas {
             + "   <title>Inicio</title>"
             + "</head>"
             + "<body>"
-            + "  <h2>Bienvenido: Son las " + txtHora + " de " + txtFecha + "</h2>"
+            + "  <h2>Bienvenido: Son las " + txtHora + " del " + txtFecha + "</h2>"
             + "  <p><a href=\"/\">Inicio</a></p>"
             + "  <p><a href=\"/info\">Info portal</a></p>"
             + "  <p><a href=\"/listado\">Listado</a></p>"
@@ -36,7 +36,15 @@ public class Paginas {
             + "   <title>Inicio</title>"
             + "</head>"
             + "<body>"
-            + "   <h2>info pendiente</h2>"
+            + "   <h2>Bienvenido al servicio de réplicas de RedIRIS</h2>"
+            + "<p>El servicio de réplicas de RedIRIS ofrece un conjunto de copias"
+            + " de repositorios de distintos sitios de interés para la comunidad "
+            + "académica y de investigación. Está disponible vía Web, FTP y rsync."
+            + "<p>Si desea contactar con nosotros para sugerir una réplica que "
+            + "piense que deba ser replicada, puede contactar con nosotros, "
+            + "indicándonos detalles de la misma, así como de la organización a "
+            + "la que pertenece."
+            + "<p>Ir a <a href=\"/\">Inicio</a></p>"
             + "</body>" + "</html>";
 
     public static final String html_listado
@@ -47,6 +55,7 @@ public class Paginas {
             + "</head>"
             + "<body>"
             + "   <h2>listado pendiente</h2>"
+            + "<p>Ir a <a href=\"/\">Inicio</a></p>"
             + "</body>" + "</html>";
     public static final String hrml_noEncontrado
             = "<html>"
