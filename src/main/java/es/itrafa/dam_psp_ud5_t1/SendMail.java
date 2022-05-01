@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package es.itrafa.dam_psp_ud5_t1;
 
 import java.util.Properties;
@@ -15,12 +11,19 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
-public class Mail {
+public class SendMail extends Thread {
 
-    private static final Logger LOG = Logger.getLogger(Mail.class.getName());
+    private final String subjectText;
+    private final String messageTxt;
+    private static final Logger LOG = Logger.getLogger(SendMail.class.getName());
 
-    public static void send(String subjectText, String messageTxt) {
+    SendMail(String subjectText, String messageTxt) {
+        this.subjectText = subjectText;
+        this.messageTxt = messageTxt;
+    }
 
+    @Override
+    public void run() {
         // Recipient's email ID needs to be mentioned.
         String to = "it-rafa@bit-acora.com";
 
@@ -47,11 +50,8 @@ public class Mail {
 
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-
                 return new PasswordAuthentication(from, pw);
-
             }
-
         });
 
         // Used to debug SMTP issues
@@ -74,10 +74,9 @@ public class Mail {
             // Send message
             Transport.send(message);
             LOG.log(Level.INFO, "Enviado aviso e-mail a {0}", to);
-        } catch (MessagingException mex) {
-            mex.printStackTrace();
+            
+        } catch (MessagingException ex) {
+            ex.printStackTrace();
         }
-
     }
-
 }

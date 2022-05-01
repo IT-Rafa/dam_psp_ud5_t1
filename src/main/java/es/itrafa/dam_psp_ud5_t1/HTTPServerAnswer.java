@@ -8,20 +8,19 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  *
  * @author Juan Morillo Fernandez
  */
-public class HiloDespachador extends Thread {
+public class HTTPServerAnswer extends Thread {
 
-    private static final Logger LOG = Logger.getLogger(HiloDespachador.class.getName());
+    private static final Logger LOG = Logger.getLogger(HTTPServerAnswer.class.getName());
 
     private final Socket socket;
 
-    public HiloDespachador(Socket client) {
+    public HTTPServerAnswer(Socket client) {
 
         this.socket = client;
     }
@@ -38,32 +37,34 @@ public class HiloDespachador extends Thread {
             PrintWriter print = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF8"), true);
 
             if ((peticion = bufLeer.readLine()) == null) {
-                LOG.log(Level.INFO, "({0}) Petición recibida nula",
-                        HiloDespachador.currentThread().getName()
-                );
+
+                LOG.info(String.format("(%s) Petición http nula: %s",
+                        HTTPServerAnswer.currentThread().getName(),
+                        peticion));
             } else {
-                LOG.log(Level.INFO, "({0}) Petición http recibida: {1}",
-                        new Object[]{HiloDespachador.currentThread().getName(),
-                            peticion}
-                );
-
                 if (peticion.startsWith("GET")) {
-
+                    LOG.info(String.format("(%s) Petición http GET recibida: %s",
+                            HTTPServerAnswer.currentThread().getName(),
+                            peticion));
                     //extrae la subcadena entre GET y HTTP
                     peticion = peticion.replaceAll(" ", "");
                     peticion = peticion.substring(3, peticion.lastIndexOf("HTTP"));
                     validGetAnswer(print, peticion);
 
+                } else {
+                    LOG.info(String.format("(%s) etición http No GET recibida: %s",
+                            HTTPServerAnswer.currentThread().getName(),
+                            peticion));
+
                 }
                 insSR.close();
                 bufLeer.close();
                 socket.close();
-
+                LOG.info(String.format("(%s) Hilo cerrado",
+                        HTTPServerAnswer.currentThread().getName()));
             }
         } catch (IOException ex) {
-            LOG.log(Level.SEVERE, "({0}) ERROR: ",
-                    ex.getLocalizedMessage()
-            );
+            LOG.severe(String.format("ERROR: %s", ex.getLocalizedMessage()));
         }
 
     }
@@ -71,50 +72,38 @@ public class HiloDespachador extends Thread {
     private void validGetAnswer(PrintWriter print, String peticion) {
         String html;
         String initLine;
-        String firstHeader;
-        String pageAsked;
 
-        if (peticion.length() == 0
-                || peticion.equals("/") || peticion.equals("/info")
-                || peticion.equals("/listado")) {
+        initLine = Mensajes.lineaInicial_OK;
 
-            initLine = Mensajes.lineaInicial_OK;
-            firstHeader = Paginas.primeraCabecera;
-
-            if (peticion.equals("/")) {
+        if (peticion.length() == 0) {
+            peticion = "/";
+        }
+        switch (peticion) {
+            case "/":
                 html = Paginas.html_index;
-                pageAsked = "inicio";
-
                 DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy");
                 String time = dtf.format(LocalDateTime.now());
 
-                Mail.send(
+                SendMail sendMail = new SendMail(
                         "AVISO dam_psp_ud5_1",
                         "Se accedio a la página de inicio del servidor http dam_psp_ud5_t1 a las "
                         + time);
-
-            } else if (peticion.equals("/info")) {
+                sendMail.start();
+                break;
+            case "/info":
                 html = Paginas.html_info;
-                pageAsked = "info";
-
-            } else if (peticion.equals("/listado")) {
+                break;
+            case "/listado":
                 html = Paginas.html_listado;
-                pageAsked = "listado";
-
-            } else {
+                break;
+            default:
                 initLine = Mensajes.lineaInicial_NotFound;
-                firstHeader;
-
                 html = Paginas.hrml_noEncontrado;
                 print.println(Mensajes.lineaInicial_NotFound);
-
-            }
-        } else {
-            html = Paginas.hrml_noEncontrado;
-            print.println(Mensajes.lineaInicial_NotFound);
-
+                break;
         }
-        print.println(Mensajes.lineaInicial_OK);
+
+        print.println(initLine);
         print.println(Paginas.primeraCabecera);
         print.println("Content-Lenght: " + html.length() + 1);
         print.println("\n");
