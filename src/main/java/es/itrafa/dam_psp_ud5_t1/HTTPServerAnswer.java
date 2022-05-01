@@ -25,8 +25,11 @@ public class HTTPServerAnswer extends Thread {
         this.socket = client;
     }
 
+    @Override
     public void run() {
         String peticion;
+        long tiempoInicio = System.currentTimeMillis();
+        long tiempoFin;
 
         try {
             //  String httpResponse = "HTTP/1.1 200 OK";
@@ -60,8 +63,10 @@ public class HTTPServerAnswer extends Thread {
                 insSR.close();
                 bufLeer.close();
                 socket.close();
-                LOG.info(String.format("(%s) Hilo cerrado",
-                        HTTPServerAnswer.currentThread().getName()));
+                tiempoFin = System.currentTimeMillis();
+                LOG.info(String.format("(%s) Tiempo respuesta petición HTTP: %d ms; Cerrando Hilo",
+                        HTTPServerAnswer.currentThread().getName(),
+                        tiempoFin - tiempoInicio));
             }
         } catch (IOException ex) {
             LOG.severe(String.format("ERROR: %s", ex.getLocalizedMessage()));
@@ -93,8 +98,21 @@ public class HTTPServerAnswer extends Thread {
             case "/info":
                 html = Paginas.html_info;
                 break;
+
             case "/listado":
-                html = Paginas.html_listado;
+                ReadFTP ftp = new ReadFTP();
+                String listFiles = ftp.read();
+                html
+                        = "<html>"
+                        + "<head>"
+                        + "   <meta charset=\"utf-8\">"
+                        + "   <title>Listado</title>"
+                        + "</head>"
+                        + "<body>"
+                        + "   <h2>listado pendiente</h2>"
+                        + "<p>Ir a <a href=\"/\">Inicio</a></p>"
+                        + listFiles
+                        + "</body>" + "</html>";
                 break;
             default:
                 initLine = Mensajes.lineaInicial_NotFound;

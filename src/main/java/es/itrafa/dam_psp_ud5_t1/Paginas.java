@@ -47,16 +47,7 @@ public class Paginas {
             + "<p>Ir a <a href=\"/\">Inicio</a></p>"
             + "</body>" + "</html>";
 
-    public static final String html_listado
-            = "<html>"
-            + "<head>"
-            + "   <meta charset=\"utf-8\">"
-            + "   <title>Listado</title>"
-            + "</head>"
-            + "<body>"
-            + "   <h2>listado pendiente</h2>"
-            + "<p>Ir a <a href=\"/\">Inicio</a></p>"
-            + "</body>" + "</html>";
+
     public static final String hrml_noEncontrado
             = "<html>"
             + "<head>"
