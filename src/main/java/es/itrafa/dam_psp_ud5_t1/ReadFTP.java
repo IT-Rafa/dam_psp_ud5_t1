@@ -1,6 +1,9 @@
 package es.itrafa.dam_psp_ud5_t1;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.logging.Logger;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 
@@ -10,51 +13,63 @@ import org.apache.commons.net.ftp.FTPFile;
  */
 public class ReadFTP {
 
-    private final FTPClient client = new FTPClient();
-    private final String sFTP = "ftp.rediris.es";
-    private final String sUser = "anonymous";
-    private final String sPassword = "";
+    private static final Logger LOG = Logger.getLogger(ReadFTP.class.getName());
 
-    protected String getFiles() {
-        String listFiles = "";
+    public String getFilesList() {
+        String ftpListFiles = null;
+        FTPClient client = new FTPClient();
+        String sFTP = "ftp.rediris.es";
+        String sUser = "anonymous";
+        String sPassword = "";
+
         try {
             client.connect(sFTP);
             boolean login = client.login(sUser, sPassword);
             if (login) {
-                System.out.println("Usuario correcto");
-            } else {
-                System.out.println("Usuario incorrecto");
-                client.disconnect();
-                System.exit(1);
-            }
+                LOG.info(String.format("Acceso a %s concedido", sFTP));
+                FTPFile[] files = client.listFiles();
 
-            System.out.println("El directorio actual es:" + client.printWorkingDirectory());
-            FTPFile[] files = client.listFiles();
+// iterates over the files and prints details for each
+                DateFormat dateFormater = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-            //array para visualizar tipos de ficheros
-            String[] tipos = {"Fichero", "Directorio", "Enlace simbólico"};
+                for (FTPFile file : files) {
+                    ftpListFiles += file.getName();
+                    if (file.isDirectory()) {
+                        ftpListFiles = "[" + ftpListFiles + "]";
+                    }
+                    ftpListFiles += "\t\t" + file.getSize();
+                    ftpListFiles += "\t\t" + dateFormater.format(file.getTimestamp().getTime());
 
-            for (FTPFile file : files) {
-                String details = file.getName();
-                if (file.isDirectory()) {
-                    details = "[" + details + "]";
                 }
-                details += "\t\t tamaño:" + file.getSize();
-                details += "\t\t tipo:" + tipos[file.getType()];
-                System.out.println(details);
+
+            } else {
+                LOG.warning(String.format("Acceso a %s no válido", sFTP));
             }
+
             boolean logout = client.logout();
             if (logout) {
-                System.out.println("Desconectando...");
+                LOG.warning(String.format("Cerrando conexión FTP con %s", sFTP));
             } else {
-                System.out.println("Error al hacer logout...");
+                LOG.warning(String.format("Conexión FTP con %s no se finalizo correctamente", sFTP));
+
             }
             client.disconnect();
 
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
+            /*
+            Más funcionalidades
+            
+            Renombrar fichero:
+            if(client.rename("antiguo","nuevo"))
+            
+            Eliminar fichero:
+            if(client.deleteFile("nombre fichero"))
+            
+            
+             */
+        } catch (IOException ex) {
+            LOG.severe(String.format("ERROR acceso FTP", ex.getLocalizedMessage()));
         }
-        return listFiles;
-    }
+        return ftpListFiles;
 
+    }
 }

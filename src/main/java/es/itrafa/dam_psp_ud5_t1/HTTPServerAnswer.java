@@ -25,8 +25,11 @@ public class HTTPServerAnswer extends Thread {
         this.socket = client;
     }
 
+    @Override
     public void run() {
         String peticion;
+        long tiempoInicio = System.currentTimeMillis();
+        long tiempoFin;
 
         try {
             //  String httpResponse = "HTTP/1.1 200 OK";
@@ -38,12 +41,12 @@ public class HTTPServerAnswer extends Thread {
 
             if ((peticion = bufLeer.readLine()) == null) {
 
-                LOG.info(String.format("(%s) Petición http nula: %s",
+                LOG.info(String.format("(%s) Petici�n http nula: %s",
                         HTTPServerAnswer.currentThread().getName(),
                         peticion));
             } else {
                 if (peticion.startsWith("GET")) {
-                    LOG.info(String.format("(%s) Petición http GET recibida: %s",
+                    LOG.info(String.format("(%s) Petici�n http GET recibida: %s",
                             HTTPServerAnswer.currentThread().getName(),
                             peticion));
                     //extrae la subcadena entre GET y HTTP
@@ -52,7 +55,7 @@ public class HTTPServerAnswer extends Thread {
                     validGetAnswer(print, peticion);
 
                 } else {
-                    LOG.info(String.format("(%s) etición http No GET recibida: %s",
+                    LOG.info(String.format("(%s) etici�n http No GET recibida: %s",
                             HTTPServerAnswer.currentThread().getName(),
                             peticion));
 
@@ -60,8 +63,10 @@ public class HTTPServerAnswer extends Thread {
                 insSR.close();
                 bufLeer.close();
                 socket.close();
-                LOG.info(String.format("(%s) Hilo cerrado",
-                        HTTPServerAnswer.currentThread().getName()));
+                tiempoFin = System.currentTimeMillis();
+                LOG.info(String.format("(%s) Tiempo respuesta petici�n HTTP: %d ms; Cerrando Hilo",
+                        HTTPServerAnswer.currentThread().getName(),
+                        tiempoFin - tiempoInicio));
             }
         } catch (IOException ex) {
             LOG.severe(String.format("ERROR: %s", ex.getLocalizedMessage()));
@@ -86,16 +91,19 @@ public class HTTPServerAnswer extends Thread {
 
                 SendMail sendMail = new SendMail(
                         "AVISO dam_psp_ud5_1",
-                        "Se accedio a la página de inicio del servidor http dam_psp_ud5_t1 a las "
+                        "Se accedio a la p�gina de inicio del servidor http dam_psp_ud5_t1 a las "
                         + time);
                 sendMail.start();
                 break;
             case "/info":
                 html = Paginas.html_info;
                 break;
+
             case "/listado":
                 ReadFTP ftp = new ReadFTP();
-                String listFiles = ftp.getFiles();
+
+                String listFiles = ftp.getFilesList();
+
                 html
                         = "<html>"
                         + "<head>"
@@ -104,8 +112,9 @@ public class HTTPServerAnswer extends Thread {
                         + "</head>"
                         + "<body>"
                         + "   <h2>listado pendiente</h2>"
-                        + listFiles
+
                         + "<p>Ir a <a href=\"/\">Inicio</a></p>"
+                        + listFiles
                         + "</body>" + "</html>";
                 break;
             default:

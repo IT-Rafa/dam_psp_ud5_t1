@@ -1,7 +1,6 @@
 package es.itrafa.dam_psp_ud5_t1;
 
 import java.util.Properties;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -73,7 +72,10 @@ public class SendMail extends Thread {
             message.setText(messageTxt);
             // Send message
             Transport.send(message);
-            LOG.log(Level.INFO, "Enviado aviso e-mail a {0}", to);
+
+            LOG.info(String.format("(%s) Enviado aviso e-mail a: %s",
+                    HTTPServerAnswer.currentThread().getName(),
+                    to));
 
         } catch (MessagingException ex) {
             ex.printStackTrace();
