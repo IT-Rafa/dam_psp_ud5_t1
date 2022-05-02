@@ -12,9 +12,9 @@ package es.itrafa.dam_psp_ud5_t1;
 // Clase que intercambia mensajes para el protocolo HTTP
 public class Mensajes {
     
-    public static final String lineaInicial_OK = "HTTP/1.1 200 OK";
-    public static final String lineaInicial_NotFound = "HTTP/1.1 404 Not Found";
-    
+    public static final String INITIAL_LINE_OK = "HTTP/1.1 200 OK";
+    public static final String INITIAL_LINE_NotFound = "HTTP/1.1 404 Not Found";
+    public static final String FIRSTHEADER = "Content-Type:text/html;charset=UTF-8";
 }
 
 

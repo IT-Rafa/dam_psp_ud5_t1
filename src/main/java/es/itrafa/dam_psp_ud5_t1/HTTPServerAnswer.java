@@ -8,12 +8,13 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
- *
- * @author Juan Morillo Fernandez
+ * Responde a las peticiónes de cada cliente hechas a través del servidor http
+ * 
+ * @see HTTPServerAnswer
+ * @author it-rafamartinez
  */
 public class HTTPServerAnswer extends Thread {
 
@@ -84,7 +85,7 @@ public class HTTPServerAnswer extends Thread {
         String html;
         String initLine;
 
-        initLine = Mensajes.lineaInicial_OK;
+        initLine = Mensajes.INITIAL_LINE_OK;
 
         //extrae la subcadena entre GET y HTTP
         method = method.substring(3, method.lastIndexOf("HTTP"));
@@ -94,9 +95,22 @@ public class HTTPServerAnswer extends Thread {
         }
         switch (method) {
             case "/":
-                html = Paginas.HTML_INDEX;
                 DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy");
                 String time = dtf.format(LocalDateTime.now());
+
+                html
+                        = "<! DOCTYPE html>"
+                        + "<html>"
+                        + "<head>"
+                        + "   <meta charset=\"utf-8\">"
+                        + "   <title>Inicio</title>"
+                        + "</head>"
+                        + "<body>"
+                        + "  <h2>Bienvenido: Son las " + time + "</h2>"
+                        + "  <p><a href=\"/\">Inicio</a></p>"
+                        + "  <p><a href=\"/info\">Info portal</a></p>"
+                        + "  <p><a href=\"/listado\">Listado</a></p>"
+                        + "</body></html>";
 
                 SendMail sendMail = new SendMail(
                         "AVISO dam_psp_ud5_1",
@@ -108,13 +122,29 @@ public class HTTPServerAnswer extends Thread {
 
                 break;
             case "/info":
-                html = Paginas.HTML_INFO;
+                html
+                        = "<!DOCTYPE html>"
+                        + "<html>"
+                        + "<head>"
+                        + "   <meta charset=\"utf-8\">"
+                        + "   <title>Info</title>"
+                        + "</head>"
+                        + "<body>"
+                        + "   <h2>Bienvenido al servicio de réplicas de RedIRIS</h2>"
+                        + "<p>El servicio de réplicas de RedIRIS ofrece un conjunto de copias"
+                        + " de repositorios de distintos sitios de interés para la comunidad "
+                        + "académica y de investigación. Está disponible vía Web, FTP y rsync."
+                        + "<p>Si desea contactar con nosotros para sugerir una réplica que "
+                        + "piense que deba ser replicada, puede contactar con nosotros, "
+                        + "indicándonos detalles de la misma, así como de la organización a "
+                        + "la que pertenece."
+                        + "<p>Ir a <a href=\"/\">Inicio</a></p>"
+                        + "</body>" + "</html>";
                 break;
 
             case "/listado":
                 ReadFTP ftp = new ReadFTP();
-
-                ArrayList<String> listFiles = ftp.getFilesList();
+                DataFolder listFiles = ftp.getFilesList();
 
                 html
                         = "<!DOCTYPE html>"
@@ -122,25 +152,54 @@ public class HTTPServerAnswer extends Thread {
                         + "<head>"
                         + "   <meta charset=\"utf-8\">"
                         + "   <title>Listado</title>"
+                        + "<style>"
+                        + "table, th, td {border:1px solid black;}"
+                        + "</style>"
                         + "</head>"
                         + "<body>"
-                        + "   <h2>listado pendiente</h2>";
-                for (String name : listFiles) {
-                    html += "<p>" + name + "</p>";
-                }
+                        + "   <h2>Listado archivos en " + listFiles.getPath() + "</h2>";
                 html
-                        += "<p>Ir a <a href=\"/\">Inicio</a></p>"
+                        += "<table style=\"width:100%\">"
+                        + "<tr>"
+                        + "<th>Nombre</th>"
+                        + "<th>Tipo</th>"
+                        + "<th>Tamaño</th>"
+                        + "</tr>";
+
+                for (DataFile file : listFiles.getFiles()) {
+                    html
+                            += "<tr>"
+                            + "<td>" + file.getName() + "</td>"
+                            + "<td>" + file.getType() + "</td>"
+                            + "<td>" + file.getSize() + "</td>"
+                            + "</tr>";
+
+                }
+
+                html
+                        += "</table>"
+                        + "<p>Ir a <a href=\"/\">Inicio</a></p>"
                         + "</body>" + "</html>";
                 break;
             default:
-                initLine = Mensajes.lineaInicial_NotFound;
-                html = Paginas.hrml_noEncontrado;
-                print.println(Mensajes.lineaInicial_NotFound);
+                html
+                        = "<!DOCTYPE html>"
+                        + "<html>"
+                        + "<head>"
+                        + "<meta charset=\"utf-8\">"
+                        + "<title>Página no encontrada</title>"
+                        + "</head>"
+                        + "<body>"
+                        + "<p>ERROR: Página no encontrada</p>"
+                        + "<p>Ir a <a href=\"/\">Inicio</a></p>"
+                        + "</body>"
+                        + "</html>";
+                print.println(Mensajes.INITIAL_LINE_NotFound);
                 break;
         }
 
         print.println(initLine);
-        print.println(Paginas.primeraCabecera);
+        print.println(Mensajes.FIRSTHEADER);
         print.println("Content-Lenght: " + html.length() + 1);
         print.println("\n");
         print.println(html);

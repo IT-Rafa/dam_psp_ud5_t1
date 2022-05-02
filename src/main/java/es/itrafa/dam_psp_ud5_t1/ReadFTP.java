@@ -23,9 +23,10 @@ public class ReadFTP {
         LOG = Logger.getLogger(ReadFTP.class.getName());
     }
 
-    public ArrayList<String> getFilesList() {
-        ArrayList<String> ftpListFiles = new ArrayList<>();
+    public DataFolder getFilesList() {
+        DataFolder ftpListFiles = new DataFolder();
         FTPClient client = new FTPClient();
+
         String sFTP = "ftp.rediris.es";
         String sUser = "anonymous";
         String sPassword = "";
@@ -35,22 +36,31 @@ public class ReadFTP {
             boolean login = client.login(sUser, sPassword);
             if (login) {
                 LOG.info(String.format("Acceso a %s concedido. Recogiendo lista archivos", sFTP));
+                client.changeWorkingDirectory("debian");
                 FTPFile[] files = client.listFiles();
 
-// iterates over the files and prints details for each
                 DateFormat dateFormater = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                String[] tipos = {"Fichero", "Carpeta", "Enlace simbólico"};
 
-                for (FTPFile file : files) {
-                    String name = file.getName();
-                    if (file.isDirectory()) {
-                        name = "[" + name + "]";
+                ftpListFiles.setPath(client.printWorkingDirectory());
+
+                for (FTPFile ftpfile : files) {
+                    DataFile file = new DataFile();
+                    file.setName(ftpfile.getName());
+
+                    if (ftpfile.isDirectory()) {
+                        file.setType("Carpeta");
+                    } else if (ftpfile.isFile()) {
+                        file.setType("Fichero");
+                    } else if (ftpfile.isSymbolicLink()) {
+                        file.setType("Enlace");
+                    } else { // isUnknown
+                        file.setType("Desconocido");
                     }
-                    name += "\t\t tamaño:" + file.getSize();
-                    name += "\t\t tipo:" + tipos[file.getType()];
-                    ftpListFiles.add(name);
+
+                    file.setSize(String.format("%d", ftpfile.getSize()));
+                    ftpListFiles.getFiles().add(file);
                 }
-                Collections.sort(ftpListFiles);
+                Collections.sort(ftpListFiles.getFiles());
             } else {
                 LOG.warning(String.format("Acceso a %s no válido", sFTP));
             }
