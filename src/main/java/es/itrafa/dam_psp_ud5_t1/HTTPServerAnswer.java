@@ -94,7 +94,19 @@ public class HTTPServerAnswer extends Thread {
                 html = Paginas.html_info;
                 break;
             case "/listado":
-                html = Paginas.html_listado;
+                ReadFTP ftp = new ReadFTP();
+                String listFiles = ftp.getFiles();
+                html
+                        = "<html>"
+                        + "<head>"
+                        + "   <meta charset=\"utf-8\">"
+                        + "   <title>Listado</title>"
+                        + "</head>"
+                        + "<body>"
+                        + "   <h2>listado pendiente</h2>"
+                        + listFiles
+                        + "<p>Ir a <a href=\"/\">Inicio</a></p>"
+                        + "</body>" + "</html>";
                 break;
             default:
                 initLine = Mensajes.lineaInicial_NotFound;

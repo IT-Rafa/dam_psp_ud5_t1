@@ -12,10 +12,10 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 public class SendMail extends Thread {
+    private static final Logger LOG = Logger.getLogger(SendMail.class.getName());
 
     private final String subjectText;
     private final String messageTxt;
-    private static final Logger LOG = Logger.getLogger(SendMail.class.getName());
 
     SendMail(String subjectText, String messageTxt) {
         this.subjectText = subjectText;
@@ -74,7 +74,7 @@ public class SendMail extends Thread {
             // Send message
             Transport.send(message);
             LOG.log(Level.INFO, "Enviado aviso e-mail a {0}", to);
-            
+
         } catch (MessagingException ex) {
             ex.printStackTrace();
         }
