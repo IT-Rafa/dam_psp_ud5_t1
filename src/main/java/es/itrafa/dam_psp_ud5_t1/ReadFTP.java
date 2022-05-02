@@ -39,7 +39,7 @@ public class ReadFTP {
 
 // iterates over the files and prints details for each
                 DateFormat dateFormater = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                String[] tipos = {"Fichero", "Directorio", "Enlace simbólico"};
+                String[] tipos = {"Fichero", "Carpeta", "Enlace simbólico"};
 
                 for (FTPFile file : files) {
                     String name = file.getName();

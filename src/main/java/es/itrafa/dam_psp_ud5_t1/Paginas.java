@@ -16,8 +16,9 @@ public class Paginas {
     private static String txtFecha = dtfFecha.format(LocalDateTime.now());
     public static final String primeraCabecera = "Content-Type:text/html;charset=UTF-8";
 
-    public static final String html_index
-            = "<html>"
+    public static final String HTML_INDEX
+            = "<! DOCTYPE html>"
+            + "<html>"
             + "<head>"
             + "   <meta charset=\"utf-8\">"
             + "   <title>Inicio</title>"
@@ -29,11 +30,12 @@ public class Paginas {
             + "  <p><a href=\"/listado\">Listado</a></p>"
             + "</body></html>";
 
-    public static final String html_info
-            = "<html>"
+    public static final String HTML_INFO
+            = "<!DOCTYPE html>"
+            + "<html>"
             + "<head>"
             + "   <meta charset=\"utf-8\">"
-            + "   <title>Inicio</title>"
+            + "   <title>Info</title>"
             + "</head>"
             + "<body>"
             + "   <h2>Bienvenido al servicio de réplicas de RedIRIS</h2>"
@@ -49,7 +51,8 @@ public class Paginas {
 
 
     public static final String hrml_noEncontrado
-            = "<html>"
+            = "<!DOCTYPE html>"
+            + "<html>"
             + "<head>"
             + "<meta charset=\"utf-8\">"
             + "<title>Página no encontrada</title>"

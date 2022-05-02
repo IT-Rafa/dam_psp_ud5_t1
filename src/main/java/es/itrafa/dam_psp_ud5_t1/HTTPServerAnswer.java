@@ -94,7 +94,7 @@ public class HTTPServerAnswer extends Thread {
         }
         switch (method) {
             case "/":
-                html = Paginas.html_index;
+                html = Paginas.HTML_INDEX;
                 DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy");
                 String time = dtf.format(LocalDateTime.now());
 
@@ -108,7 +108,7 @@ public class HTTPServerAnswer extends Thread {
 
                 break;
             case "/info":
-                html = Paginas.html_info;
+                html = Paginas.HTML_INFO;
                 break;
 
             case "/listado":
@@ -117,15 +117,16 @@ public class HTTPServerAnswer extends Thread {
                 ArrayList<String> listFiles = ftp.getFilesList();
 
                 html
-                        = "<html>"
+                        = "<!DOCTYPE html>"
+                        + "<html>"
                         + "<head>"
                         + "   <meta charset=\"utf-8\">"
                         + "   <title>Listado</title>"
                         + "</head>"
                         + "<body>"
                         + "   <h2>listado pendiente</h2>";
-                for(String name:listFiles){
-                     html += "<p>" + name + "</p>";
+                for (String name : listFiles) {
+                    html += "<p>" + name + "</p>";
                 }
                 html
                         += "<p>Ir a <a href=\"/\">Inicio</a></p>"
