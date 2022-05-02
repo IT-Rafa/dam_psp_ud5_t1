@@ -11,15 +11,21 @@ import java.util.logging.Logger;
  */
 public class HTTPServerMulti {
 
-    private static final Logger LOG = Logger.getLogger(HTTPServerMulti.class.getName());
-    private static final int port = 8090;
+    private static final Logger LOG;
+    private static final int PORT = 8090;
+
+    static {
+        System.setProperty("java.util.logging.SimpleFormatter.format",
+                "[%1$tF %1$tT] [%4$s] [%3$s] %n  %5$s %n");
+        LOG = Logger.getLogger(HTTPServerMulti.class.getName());
+    }
 
     public static void main(String[] args) throws IOException {
 
         try {
-            ServerSocket socServidor = new ServerSocket(8090);
+            ServerSocket socServidor = new ServerSocket(PORT);
 
-            LOG.info(String.format("Servidor HTTP activo en puerto %d", port));
+            LOG.info(String.format("Servidor HTTP activo en puerto %d", PORT));
 
             HTTPServerAnswer hilo;
             Socket socCliente;
@@ -30,7 +36,8 @@ public class HTTPServerMulti {
                 hilo.start();
             }
         } catch (java.net.BindException ex) {
-            LOG.severe(String.format("Servidor HTTP no puede iniciarse. Puerto %d está en uso. Servidor ya activo", port));
+            LOG.severe(String.format("Servidor HTTP no puede iniciarse; %s %d %s",
+                    "El puerto", PORT, "está siendo usado."));
 
         }
     }

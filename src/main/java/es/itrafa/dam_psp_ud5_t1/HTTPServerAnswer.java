@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
@@ -16,9 +17,15 @@ import java.util.logging.Logger;
  */
 public class HTTPServerAnswer extends Thread {
 
-    private static final Logger LOG = Logger.getLogger(HTTPServerAnswer.class.getName());
+    private static final Logger LOG;
 
     private final Socket socket;
+
+    static {
+        System.setProperty("java.util.logging.SimpleFormatter.format",
+                "[%1$tF %1$tT] [%4$-7s] %5$s %n");
+        LOG = Logger.getLogger(HTTPServerAnswer.class.getName());
+    }
 
     public HTTPServerAnswer(Socket client) {
 
@@ -41,21 +48,19 @@ public class HTTPServerAnswer extends Thread {
 
             if ((peticion = bufLeer.readLine()) == null) {
 
-                LOG.info(String.format("(%s) Petici�n http nula: %s",
+                LOG.info(String.format("(%s) Petición http nula: %s",
                         HTTPServerAnswer.currentThread().getName(),
                         peticion));
             } else {
                 if (peticion.startsWith("GET")) {
-                    LOG.info(String.format("(%s) Petici�n http GET recibida: %s",
+                    LOG.info(String.format("(%s) Petición http GET recibida: %s",
                             HTTPServerAnswer.currentThread().getName(),
                             peticion));
-                    //extrae la subcadena entre GET y HTTP
-                    peticion = peticion.replaceAll(" ", "");
-                    peticion = peticion.substring(3, peticion.lastIndexOf("HTTP"));
-                    validGetAnswer(print, peticion);
+
+                    validGetAnswer(print, peticion, HTTPServerAnswer.currentThread().getName());
 
                 } else {
-                    LOG.info(String.format("(%s) etici�n http No GET recibida: %s",
+                    LOG.info(String.format("(%s) Petición http No GET recibida: %s",
                             HTTPServerAnswer.currentThread().getName(),
                             peticion));
 
@@ -64,7 +69,7 @@ public class HTTPServerAnswer extends Thread {
                 bufLeer.close();
                 socket.close();
                 tiempoFin = System.currentTimeMillis();
-                LOG.info(String.format("(%s) Tiempo respuesta petici�n HTTP: %d ms; Cerrando Hilo",
+                LOG.info(String.format("(%s) Tiempo respuesta petición HTTP: %d ms; Cerrando Hilo",
                         HTTPServerAnswer.currentThread().getName(),
                         tiempoFin - tiempoInicio));
             }
@@ -74,16 +79,20 @@ public class HTTPServerAnswer extends Thread {
 
     }
 
-    private void validGetAnswer(PrintWriter print, String peticion) {
+    private void validGetAnswer(PrintWriter print, String peticion, String threadName) {
+        String method = peticion.replaceAll(" ", "");
         String html;
         String initLine;
 
         initLine = Mensajes.lineaInicial_OK;
 
-        if (peticion.length() == 0) {
-            peticion = "/";
+        //extrae la subcadena entre GET y HTTP
+        method = method.substring(3, method.lastIndexOf("HTTP"));
+
+        if (method.length() == 0) {
+            method = "/";
         }
-        switch (peticion) {
+        switch (method) {
             case "/":
                 html = Paginas.html_index;
                 DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy");
@@ -91,9 +100,12 @@ public class HTTPServerAnswer extends Thread {
 
                 SendMail sendMail = new SendMail(
                         "AVISO dam_psp_ud5_1",
-                        "Se accedio a la p�gina de inicio del servidor http dam_psp_ud5_t1 a las "
-                        + time);
+                        "Se accedió a la página de inicio del servidor http dam_psp_ud5_t1 a las "
+                        + time, threadName);
                 sendMail.start();
+                LOG.info(String.format("(%s) Hilo envío email iniciado en %s",
+                        HTTPServerAnswer.currentThread().getName(), sendMail.getName()));
+
                 break;
             case "/info":
                 html = Paginas.html_info;
@@ -102,7 +114,7 @@ public class HTTPServerAnswer extends Thread {
             case "/listado":
                 ReadFTP ftp = new ReadFTP();
 
-                String listFiles = ftp.getFilesList();
+                ArrayList<String> listFiles = ftp.getFilesList();
 
                 html
                         = "<html>"
@@ -111,10 +123,12 @@ public class HTTPServerAnswer extends Thread {
                         + "   <title>Listado</title>"
                         + "</head>"
                         + "<body>"
-                        + "   <h2>listado pendiente</h2>"
-
-                        + "<p>Ir a <a href=\"/\">Inicio</a></p>"
-                        + listFiles
+                        + "   <h2>listado pendiente</h2>";
+                for(String name:listFiles){
+                     html += "<p>" + name + "</p>";
+                }
+                html
+                        += "<p>Ir a <a href=\"/\">Inicio</a></p>"
                         + "</body>" + "</html>";
                 break;
             default:

@@ -11,14 +11,22 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 public class SendMail extends Thread {
-    private static final Logger LOG = Logger.getLogger(SendMail.class.getName());
+
+    private static final Logger LOG;
 
     private final String subjectText;
     private final String messageTxt;
+private final String threadName;
+    static {
+        System.setProperty("java.util.logging.SimpleFormatter.format",
+                "[%1$tF %1$tT] [%4$-7s] %5$s %n");
+        LOG = Logger.getLogger(SendMail.class.getName());
+    }
 
-    SendMail(String subjectText, String messageTxt) {
+    SendMail(String subjectText, String messageTxt, String threadName) {
         this.subjectText = subjectText;
         this.messageTxt = messageTxt;
+        this.threadName = threadName;
     }
 
     @Override
@@ -73,12 +81,15 @@ public class SendMail extends Thread {
             // Send message
             Transport.send(message);
 
-            LOG.info(String.format("(%s) Enviado aviso e-mail a: %s",
+            LOG.info(String.format("(%s) Enviado aviso e-mail a %s",
                     HTTPServerAnswer.currentThread().getName(),
                     to));
 
         } catch (MessagingException ex) {
-            ex.printStackTrace();
+            LOG.severe(String.format("(%s lanzado desde hilo en HTTPServerAnswer (%s) ERROR Envío aviso e-mail a %s; %s",
+                    HTTPServerAnswer.currentThread().getName(), threadName,
+                    to, ex.getLocalizedMessage()));
+
         }
     }
 }

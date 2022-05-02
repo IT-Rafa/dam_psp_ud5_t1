@@ -3,6 +3,8 @@ package es.itrafa.dam_psp_ud5_t1;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.logging.Logger;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
@@ -13,10 +15,16 @@ import org.apache.commons.net.ftp.FTPFile;
  */
 public class ReadFTP {
 
-    private static final Logger LOG = Logger.getLogger(ReadFTP.class.getName());
+    private static final Logger LOG;
 
-    public String getFilesList() {
-        String ftpListFiles = null;
+    static {
+        System.setProperty("java.util.logging.SimpleFormatter.format",
+                "[%1$tF %1$tT] [%4$-7s] %5$s %n");
+        LOG = Logger.getLogger(ReadFTP.class.getName());
+    }
+
+    public ArrayList<String> getFilesList() {
+        ArrayList<String> ftpListFiles = new ArrayList<>();
         FTPClient client = new FTPClient();
         String sFTP = "ftp.rediris.es";
         String sUser = "anonymous";
@@ -26,22 +34,23 @@ public class ReadFTP {
             client.connect(sFTP);
             boolean login = client.login(sUser, sPassword);
             if (login) {
-                LOG.info(String.format("Acceso a %s concedido", sFTP));
+                LOG.info(String.format("Acceso a %s concedido. Recogiendo lista archivos", sFTP));
                 FTPFile[] files = client.listFiles();
 
 // iterates over the files and prints details for each
                 DateFormat dateFormater = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String[] tipos = {"Fichero", "Directorio", "Enlace simbólico"};
 
                 for (FTPFile file : files) {
-                    ftpListFiles += file.getName();
+                    String name = file.getName();
                     if (file.isDirectory()) {
-                        ftpListFiles = "[" + ftpListFiles + "]";
+                        name = "[" + name + "]";
                     }
-                    ftpListFiles += "\t\t" + file.getSize();
-                    ftpListFiles += "\t\t" + dateFormater.format(file.getTimestamp().getTime());
-
+                    name += "\t\t tamaño:" + file.getSize();
+                    name += "\t\t tipo:" + tipos[file.getType()];
+                    ftpListFiles.add(name);
                 }
-
+                Collections.sort(ftpListFiles);
             } else {
                 LOG.warning(String.format("Acceso a %s no válido", sFTP));
             }
