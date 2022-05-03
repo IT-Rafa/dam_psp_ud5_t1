@@ -59,7 +59,7 @@ public class DataFile implements Comparable<DataFile>{
 
     @Override
     public int compareTo(DataFile o) {
-         return o.getType().compareTo(this.getType());
+         return this.getType().compareTo(o.getType());
     }
     
 }

@@ -11,16 +11,19 @@ import java.time.format.DateTimeFormatter;
 import java.util.logging.Logger;
 
 /**
- * Responde a las peticiónes de cada cliente hechas a través del servidor http
- * 
+ * Responde a las peticiónes de cada cliente, hechas a través del servidor http,
+ * en hilos independientes
+ *
  * @see HTTPServerAnswer
  * @author it-rafamartinez
  */
 public class HTTPServerAnswer extends Thread {
 
-    private static final Logger LOG;
-
+    // PROPERTIES
     private final Socket socket;
+
+    // Formato para logs
+    private static final Logger LOG;
 
     static {
         System.setProperty("java.util.logging.SimpleFormatter.format",
@@ -28,27 +31,43 @@ public class HTTPServerAnswer extends Thread {
         LOG = Logger.getLogger(HTTPServerAnswer.class.getName());
     }
 
+    // CONSTRUCTORS
+    /**
+     * Crea instancia usando el socket del cliente
+     *
+     * @param client socket usado para comunicarse con cliente
+     */
     public HTTPServerAnswer(Socket client) {
-
         this.socket = client;
     }
 
+    // METHODS
+    /**
+     * Hilo encargado de contestar al cliente. Controla tiempo respuesta. Si es
+     * una petición HTTP GET para /, /info o /listado, devuelve página montada,
+     * si no devuelve no encontrado
+     *
+     */
     @Override
     public void run() {
+
+        // Almacena petición recibida
         String peticion;
+
+        // Para control tiempo respuesta
         long tiempoInicio = System.currentTimeMillis();
         long tiempoFin;
 
         try {
-            //  String httpResponse = "HTTP/1.1 200 OK";
-            // socket.getOutputStream().write(httpResponse.getBytes("UTF-8"));
+            // Captura flujo de entrada del socket
             InputStreamReader insSR = new InputStreamReader(socket.getInputStream());
+            // Adapta flujo entrada como buffer para lectura
             BufferedReader bufLeer = new BufferedReader(insSR);
-
+            // Captura flujo de salida del socket y prepara  para escritura
             PrintWriter print = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF8"), true);
 
+            // Lee petición cliente y actua según lo recibido
             if ((peticion = bufLeer.readLine()) == null) {
-
                 LOG.info(String.format("(%s) Petición http nula: %s",
                         HTTPServerAnswer.currentThread().getName(),
                         peticion));
@@ -57,7 +76,7 @@ public class HTTPServerAnswer extends Thread {
                     LOG.info(String.format("(%s) Petición http GET recibida: %s",
                             HTTPServerAnswer.currentThread().getName(),
                             peticion));
-
+                    // controla peticiones GET válidas
                     validGetAnswer(print, peticion, HTTPServerAnswer.currentThread().getName());
 
                 } else {
@@ -66,38 +85,63 @@ public class HTTPServerAnswer extends Thread {
                             peticion));
 
                 }
+                //Fin comunicación cliente. Cerramos todo
                 insSR.close();
                 bufLeer.close();
                 socket.close();
+
+                // Controlamos tiempo 
                 tiempoFin = System.currentTimeMillis();
                 LOG.info(String.format("(%s) Tiempo respuesta petición HTTP: %d ms; Cerrando Hilo",
                         HTTPServerAnswer.currentThread().getName(),
                         tiempoFin - tiempoInicio));
             }
-        } catch (IOException ex) {
-            LOG.severe(String.format("ERROR: %s", ex.getLocalizedMessage()));
+
+        } catch (java.net.SocketException ex) {
+            LOG.severe(String.format("ERROR: Servidor HTTP fallo comunicación cliente por socket; %s",
+                    ex.getLocalizedMessage()));
+
+        } catch (java.io.IOException ex) {
+            LOG.severe(String.format("ERROR: Servidor HTTP fallo comunicación cliente por entrada/salida; %s",
+                    ex.getLocalizedMessage()));
         }
 
     }
 
+    /**
+     * Controla las peticiones GET válidas. Construye cabecera respuesta y código HTML
+     * 
+     * @param print Salida flujo a cliente lista para escritura
+     * @param peticion Petición del cliente
+     * @param threadName Nombre del hilo de respuesta al cliente
+     */
     private void validGetAnswer(PrintWriter print, String peticion, String threadName) {
-        String method = peticion.replaceAll(" ", "");
+        // Cabecera con estado de la respuesta
+        String startline;
+
+        // Contiene página web 
         String html;
-        String initLine;
 
-        initLine = Mensajes.INITIAL_LINE_OK;
+        //limpia petición (creamos variable para no modificar parámetro)
+        String pageAsked = peticion.replaceAll(" ", "");
+        // Captura ruta en petición GET
+        pageAsked = pageAsked.substring(3, pageAsked.lastIndexOf("HTTP"));
 
-        //extrae la subcadena entre GET y HTTP
-        method = method.substring(3, method.lastIndexOf("HTTP"));
-
-        if (method.length() == 0) {
-            method = "/";
+        // petición vacia envia a página inicio
+        if (pageAsked.length() == 0) {
+            pageAsked = "/";
         }
-        switch (method) {
+
+        // Según página pedida, se prepara el código html y cabecera HTML
+        switch (pageAsked) {
             case "/":
+                // código respuesta
+                startline = ResponseHTTPMsg.STARTLINE_OK;
+                // Preparamos hora y fecha del sistema
                 DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy");
                 String time = dtf.format(LocalDateTime.now());
 
+                // Montamos página inicio (BIENVENIDA)
                 html
                         = "<! DOCTYPE html>"
                         + "<html>"
@@ -112,16 +156,23 @@ public class HTTPServerAnswer extends Thread {
                         + "  <p><a href=\"/listado\">Listado</a></p>"
                         + "</body></html>";
 
+                // Enviamos email al administrador a través de hilo independiente
+                // para no ralentizar el envío del html
                 SendMail sendMail = new SendMail(
                         "AVISO dam_psp_ud5_1",
                         "Se accedió a la página de inicio del servidor http dam_psp_ud5_t1 a las "
                         + time, threadName);
                 sendMail.start();
+
                 LOG.info(String.format("(%s) Hilo envío email iniciado en %s",
                         HTTPServerAnswer.currentThread().getName(), sendMail.getName()));
 
                 break;
+
             case "/info":
+                // código respuesta
+                startline = ResponseHTTPMsg.STARTLINE_OK;
+                // Montamos página (INFORMACIÓN PORTAL)
                 html
                         = "<!DOCTYPE html>"
                         + "<html>"
@@ -130,22 +181,28 @@ public class HTTPServerAnswer extends Thread {
                         + "   <title>Info</title>"
                         + "</head>"
                         + "<body>"
-                        + "   <h2>Bienvenido al servicio de réplicas de RedIRIS</h2>"
-                        + "<p>El servicio de réplicas de RedIRIS ofrece un conjunto de copias"
-                        + " de repositorios de distintos sitios de interés para la comunidad "
-                        + "académica y de investigación. Está disponible vía Web, FTP y rsync."
-                        + "<p>Si desea contactar con nosotros para sugerir una réplica que "
-                        + "piense que deba ser replicada, puede contactar con nosotros, "
-                        + "indicándonos detalles de la misma, así como de la organización a "
-                        + "la que pertenece."
+                        + "   <h2>Info del servidor creado para Tarea para PSP05</h2>"
+                        + "<ul>"
+                        + "<li><h3>inicio (/): Bienvenida, hora y enlaces a las opciones</h3></li>"
+                        + "<li><h3>info (/info): Información de enlaces</h3></li>"
+                        + "<li><h3>listado (/listado): Lista archivos en ftp.rediris.es/debian</h3></li>"
+                        + "</ul>"
                         + "<p>Ir a <a href=\"/\">Inicio</a></p>"
                         + "</body>" + "</html>";
                 break;
 
             case "/listado":
+                // código respuesta
+                startline = ResponseHTTPMsg.STARTLINE_OK;
+
+                // Montamos página (LISTADO FICHEROS FTP)
+                // Capturamos ficheros FTP con clase creada para contener los datos
+                // de una carpeta
                 ReadFTP ftp = new ReadFTP();
                 DataFolder listFiles = ftp.getFilesList();
 
+                // los datos se mostrarán en tabla. Añadimos CSS insertado en HTML
+                // para dar formato a tabla
                 html
                         = "<!DOCTYPE html>"
                         + "<html>"
@@ -156,8 +213,13 @@ public class HTTPServerAnswer extends Thread {
                         + "table, th, td {border:1px solid black;}"
                         + "</style>"
                         + "</head>"
-                        + "<body>"
-                        + "   <h2>Listado archivos en " + listFiles.getPath() + "</h2>";
+                        + "<body>";
+
+                // Añadimos título tabla con la ruta relativa al servidor FTP
+                html
+                        += "<h2>Listado archivos en [" + listFiles.getPath() + "]</h2>";
+
+                // Añadimos cabecera tabla
                 html
                         += "<table style=\"width:100%\">"
                         + "<tr>"
@@ -165,23 +227,31 @@ public class HTTPServerAnswer extends Thread {
                         + "<th>Tipo</th>"
                         + "<th>Tamaño</th>"
                         + "</tr>";
-
+                // Añadimos datos de los archivos a tabla
                 for (DataFile file : listFiles.getFiles()) {
                     html
                             += "<tr>"
-                            + "<td>" + file.getName() + "</td>"
+                            + "<td>" + file.getName();
+
+                    if (file.getType().equalsIgnoreCase("Carpeta")) {
+                        html += "/";
+                    }
+
+                    html
+                            += "</td>"
                             + "<td>" + file.getType() + "</td>"
                             + "<td>" + file.getSize() + "</td>"
                             + "</tr>";
-
                 }
-
+                // cerramos tabla
                 html
                         += "</table>"
                         + "<p>Ir a <a href=\"/\">Inicio</a></p>"
                         + "</body>" + "</html>";
                 break;
             default:
+                startline = ResponseHTTPMsg.STARTLINE_NOTFOUND;
+                // Montamos página para recurso no encontrado
                 html
                         = "<!DOCTYPE html>"
                         + "<html>"
@@ -194,13 +264,12 @@ public class HTTPServerAnswer extends Thread {
                         + "<p>Ir a <a href=\"/\">Inicio</a></p>"
                         + "</body>"
                         + "</html>";
-                print.println(Mensajes.INITIAL_LINE_NotFound);
                 break;
         }
-
-        print.println(initLine);
-        print.println(Mensajes.FIRSTHEADER);
-        print.println("Content-Lenght: " + html.length() + 1);
+        // Enviamos respuesta con código html correspondiente
+        print.println(startline);
+        print.println(ResponseHTTPMsg.HEADER_CONTENTTYPE);
+        print.println(ResponseHTTPMsg.HEADER_CONTENTLENGHT + html.length() + 1);
         print.println("\n");
         print.println(html);
 
